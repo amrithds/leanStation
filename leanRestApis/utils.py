@@ -1,17 +1,11 @@
 
 from leanRestApis.models import ProjectActivity
 
-def getMasterPlanHierarchy(project_id):
+def getMasterPlanHierarchy(project_id, sortFilters=['wbs_number']):
     if not project_id:
         raise ValueError('Project id is not provided.')
     
-    sql = """select  id,parent_project_activity_id, start_date, end_date, activity_id from    
-                (select * from leanRestApis_projectactivity
-                    order by parent_project_activity_id, id) leanRestApis_projectactivity_temp,
-                    (select @pv := '1') initialisation
-                where   ( find_in_set(parent_project_activity_id, @pv) > 0
-                and     @pv := concat(@pv, ',', id) ) OR id = @pv"""
-    return ProjectActivity.objects.raw(sql)
+    return ProjectActivity.objects.filter(project_id=project_id).select_related('activity').order_by(sortFilters)
 
 
 # DELIMITER $$
@@ -70,26 +64,3 @@ def getMasterPlanHierarchy(project_id):
                 
                 
                 
-DROP PROCEDURE IF EXISTS createWbsNumber;
-DELIMITER $$
-CREATE  PROCEDURE  createWbsNumber()
-	BEGIN
-        UPDATE leanRestApis_projectactivity SET depth = 1 WHERE parent_project_activity_id IS NULL and project_id = 1;
-
-        WHILE EXISTS (SELECT * FROM leanRestApis_projectactivity WHERE depth IS NULL AND project_id = 1) DO
-            UPDATE leanRestApis_projectactivity AS T INNER JOIN leanRestApis_projectactivity AS P ON (T.parent_project_activity_id = P.id)  SET T.depth = P.depth + 1  
-            WHERE T.project_id = 1
-            AND T.depth IS NULL;
-        END WHILE;
-    
-    UPDATE leanRestApis_projectactivity SET  wbs_number = '1'
-    WHERE parent_project_activity_id IS NULL AND project_id = 1;
-
-	WHILE EXISTS (SELECT * FROM leanRestApis_projectactivity WHERE wbs_number Is Null AND project_id = 1) DO
-        UPDATE leanRestApis_projectactivity AS T INNER JOIN leanRestApis_projectactivity AS P ON       (T.parent_project_activity_id = P.Id)  SET T.wbs_number =   CONCAT(P.wbs_number ,'.', T.sequence)  
-        WHERE P.sequence >= 0 
-        AND T.wbs_number IS NULL
-        AND T.project_id = 1; 
-    END WHILE;
-	END$$
-call createWbsNumber();
