@@ -44,7 +44,7 @@ def downloadMasterPlan(request):
         #validate parameters
         #add node
         #invoke stored procedure after insert
-        ProjectActivity.create_wbs_sequence()
+        ProjectActivity.create_wbs_sequence(project_id)
 
         #return
         #404
