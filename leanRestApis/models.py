@@ -23,7 +23,9 @@ class ProjectActivity(models.Model):
     depth=models.IntegerField(null=True)
     sequence=models.IntegerField(null=True)
     wbs_number=models.CharField(max_length=255,null=True, db_index=True)
-    def create_wbs_sequence(self, project_id):
+    @classmethod
+    def create_wbs_sequence(cls, project_id):
+        self = cls()
         # create a cursor  
         cur = connection.cursor()  
         # execute the stored procedure passing in   

@@ -2,10 +2,14 @@ from django.shortcuts import render
 from rest_framework.response import Response
 # Create your views here.
 import csv
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
 from rest_framework.decorators import api_view
 from leanRestApis.utils import getMasterPlanHierarchy
 from leanRestApis.models import Projects,ProjectActivity
+from leanRestApis.serializers.ProjectActivitySerializer import ProjectActivitySerializer
 from rest_framework import exceptions
 
 @api_view(['GET'])
@@ -29,7 +33,6 @@ def downloadMasterPlan(request):
 
         results = getMasterPlanHierarchy(project_id, order_filter)
 
-        csvContent = ''
         csvContent = '"SI No", "Activity", "Start date", "End date"\n'
         for result in results:
             csvContent += '"%s","%s","%s","%s"\n' % (result.wbs_number,result.activity.name,result.start_date,result.end_date)
@@ -38,13 +41,17 @@ def downloadMasterPlan(request):
         response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
 
         return response
-    elif request.method == 'POST':
-        #out of scope 
-        project_id = request.POST['project_id']
-        #validate parameters
-        #add node
-        #invoke stored procedure after insert
-        ProjectActivity.create_wbs_sequence(project_id)
 
-        #return
-        #404
+@api_view(['POST'])
+def project_activity(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        projectActivitySerialize = ProjectActivitySerializer(data=data)
+        #validate parameters
+        if projectActivitySerialize.is_valid():
+            #add node
+            projectActivitySerialize.save()
+            #invoke stored procedure after insert
+            ProjectActivity.create_wbs_sequence(projectActivitySerialize.data['project_id'])
+            return JsonResponse(projectActivitySerialize.data, status=201)
+        return JsonResponse(projectActivitySerialize.errors, status=400)
