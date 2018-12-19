@@ -55,3 +55,21 @@ def project_activity(request):
             ProjectActivity.create_wbs_sequence(projectActivitySerialize.data['project_id'])
             return JsonResponse(projectActivitySerialize.data, status=201)
         return JsonResponse(projectActivitySerialize.errors, status=400)
+    
+    if request.method == 'PUT':
+        #validate parameters
+        
+            #add node
+            
+            #invoke stored procedure after insert
+            #ProjectActivity.create_wbs_sequence(projectActivitySerialize.data['project_id'])
+        pass
+    if request.method == 'DELETE':
+        #validate parameters
+        
+            #add node
+            
+            #invoke stored procedure after insert
+            #ProjectActivity.create_wbs_sequence(projectActivitySerialize.data['project_id'])
+        pass
+        
